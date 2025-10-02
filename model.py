@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import argparse
 import pandas as pd
 import pickle
 import sys
@@ -7,18 +8,15 @@ import warnings
 from sklearn.linear_model import LinearRegression
 from sklearn.multioutput import MultiOutputRegressor
 
+# File name to pickle the model data to
+MODEL_PICKLE_FILE = "model.pkl"
+
+# File name to read stats from
+STATS_FILE = "data/stats.csv"
+
 warnings.filterwarnings("ignore")
 
-def usage():
-    print("Usage: python3 model.py <train|predict> [args...]")
-    exit(1)
-
-if len(sys.argv) < 2:
-    usage()
-
-command = sys.argv[1]
-
-if command == "train":
+def train(args):
     data = pd.read_csv("data/stats.csv")
 
     X = data[["opp_defense_skill"]]
@@ -28,25 +26,41 @@ if command == "train":
     model = MultiOutputRegressor(LinearRegression())
     model.fit(X, y, sample_weight=weights)
 
-    with open("model.pkl", "wb+") as f:
+    with open(MODEL_PICKLE_FILE, "wb+") as f:
         pickle.dump(model, f)
 
-elif command == "predict":
-    if len(sys.argv) != 3:
-        print("Usage: python3 model.py predict <OPPONENT DEFENSE SKILL [0.0, 1.0]>")
-        exit(1)
-
-    with open("model.pkl", "rb") as f:
+def predict(args):
+    with open(MODEL_PICKLE_FILE, "rb") as f:
         model = pickle.load(f)
 
-    opp_defense_skill = float(sys.argv[2])
+    opp_defense_skill = float(args.rating)
     pred = model.predict([[opp_defense_skill]])
 
     comp_pct, yds, tds, ints = pred[0]
-    print("Completion %:", round(comp_pct, 2))
-    print("Yards:", round(yds))
-    print("TDs:", round(tds))
-    print("INTs:", round(ints))
+    comp_pct = round(comp_pct, 2)
+    yds = round(yds)
+    tds = round(tds)
+    ints = round(ints)
 
-else:
-    usage()
+    if args.format == "readable":
+        print("Completion %:", comp_pct)
+        print("Yards:", yds)
+        print("TDs:", tds)
+        print("INTs:", ints)
+    elif args.format == "csv":
+        print("Completion %,Yards,TDs,INTs")
+        print(f"{comp_pct},{yds},{tds},{ints}")
+
+parser = argparse.ArgumentParser()
+subparsers = parser.add_subparsers()
+
+train_parser = subparsers.add_parser("train")
+train_parser.set_defaults(func=train)
+
+predict_parser = subparsers.add_parser("predict")
+predict_parser.add_argument("rating")
+predict_parser.add_argument("-f", "--format", choices=["readable", "csv"], default="readable")
+predict_parser.set_defaults(func=predict)
+
+args = parser.parse_args()
+args.func(args)
