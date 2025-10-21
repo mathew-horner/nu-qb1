@@ -7,8 +7,8 @@ import re
 import requests
 import sys
 
-TEAM_COUNT_2024 = 134
-TEAM_COUNT_2025 = 136
+TEAM_COUNT_FBS_2024 = 134
+TEAM_COUNT_FBS_2025 = 136
 
 if len(sys.argv) != 2:
     print("Usage: python3 defense_rating.py <TEAM>")
@@ -35,8 +35,8 @@ game_count_2025 = extract_game_count(page_2025)
 opp_ppg_2024_rank = extract_opp_ppg_rank(page_2024)
 opp_ppg_2025_rank = extract_opp_ppg_rank(page_2025)
 
-rating_2024 = 1 - (opp_ppg_2024_rank / TEAM_COUNT_2024)
-rating_2025 = 1 - (opp_ppg_2025_rank / TEAM_COUNT_2025)
+rating_2024 = 1 - (opp_ppg_2024_rank / TEAM_COUNT_FBS_2024)
+rating_2025 = 1 - (opp_ppg_2025_rank / TEAM_COUNT_FBS_2025)
 
 rating = ((rating_2024 * game_count_2024) + (rating_2025 * game_count_2025)) / (game_count_2024 + game_count_2025)
 print(rating)
